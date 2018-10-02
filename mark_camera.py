@@ -21,13 +21,15 @@ parser.add_argument("cam4_subdir", type=str)
 parser.add_argument("marker_file", type=str)
 args = parser.parse_args()
 
+# Initalize parameters
+cam_proj = {}
 # Kinect cameras
 cam = "00"
 imgdir = "{:}/{:}".format(args.root_dir, args.kinect_subdir)
 mean_img = fio.lz4_mean_img(fio.list_img_cam(imgdir, cam))
 
 with open("{:}/{:}".format(args.root_dir, args.marker_file), "rb") as f:
-    markers = pickle.load(f, encoding="latin1")
+    unlabeled_dict = pickle.load(f, encoding="latin1")
 
-unlabeled_proj = ui.get_marker_id(mean_img, cam, markers)
-print(unlabeled_proj)
+cam_proj = ui.get_marker_id(mean_img, cam, unlabeled_dict, cam_proj)
+print(cam_proj)
