@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patches as ptch
 
 
-def get_marker_id(img, cam, unlabeled_dict, cam_proj, clicks=0, radius=6, alpha=0.9):
+def get_marker_id(img, cam, unlabeled_dict, cam_proj, clicks=0, radius=4, alpha=0.7):
     def on_key_pressed(e):
         for pt in pts:
             dot.center = pt
@@ -48,3 +48,12 @@ def get_marker_id(img, cam, unlabeled_dict, cam_proj, clicks=0, radius=6, alpha=
 
     return cam_proj
 
+
+def show_clicks_on_img(img, cam, cam_proj):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(img)
+    for ind, pt in cam_proj[cam].items():
+        dot = ptch.Circle(pt, 4, color="red", alpha=0.6)
+        ax.add_artist(dot)
+    plt.show()
