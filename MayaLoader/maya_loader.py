@@ -16,6 +16,13 @@ import maya.cmds as cmds
 
 pm.loadPlugin("fbxmaya")
 
+marker_names = ["ARIEL", "RBHD", "LBHD", "RFHD", "LFHD", "C7", "LBSH", "LFSH", "LUPA", "LELB",
+                "LIEL", "LWRE", "LOWR", "LIWR", "LOHAND", "LIHAND", "CLAV", "T10", "STRN",
+                "RFSH", "RBSH", "RUPA", "RELB", "RIEL", "RWRE", "RIWR", "ROWR", "RIHAND",
+                "ROHAND", "LFWT", "LBWT", "RFWT", "RBWT", "LMWT", "RMWT", "LHIP", "LKNE", "LKNI",
+                "LSHN", "LHEL", "LANK", "LMT5", "LMT1", "LTOE", "RHIP", "RKNE", "RKNI", "RSHN",
+                "RHEL", "RANK", "RMT5", "RMT1", "RTOE"]
+
 
 def load_file(fname):
     pm.newFile(f=1)
@@ -59,6 +66,40 @@ def get_mean_pos_unlabeled(unlabeled_dict):
         unlabeled_dict[idx]["mean"] = mean_loc
 
     return unlabeled_dict
+
+
+def load_labeled_with_temporal():
+    markers = pm.ls(regex="({:})".format("|".join(marker_names)))
+    marker_dict = {}
+    for mkr in markers:
+        name = str(mkr.name())
+        marker_dict[name] = {
+            "loc": np.array(mkr.worldPosition.get()),
+            "visible": mkr.visibility.get(),
+            "temporalX": {},
+            "temporalY": {},
+            "temporalZ": {}
+        }
+
+    curves = pm.ls(regex="({:})_translate.*".format("|".join(marker_names)))
+    for cur in curves:
+        m = re.search("(\w+)_translate(.*)", cur.name())
+        name, dim = str(m.group(1)), "temporal" + m.group(2)
+        for f_ind in range(cur.numKeys()):
+            t, v = np.int32(cur.getTime(f_ind)), np.float64(cur.getValue(f_ind))
+            marker_dict[name][dim][t] = v
+
+    for mkr_name in marker_dict.keys():
+        mkr = marker_dict[mkr_name]
+        max_frame = max(max(mkr["temporalX"].keys()), max(mkr["temporalY"].keys()), max(mkr["temporalZ"].keys()))
+        vec_curve = np.zeros([max_frame + 1, 3], np.float64) + np.nan
+        for ind in range(max_frame + 1):
+            if all(ind in mkr[axis] for axis in ["temporalX", "temporalY", "temporalZ"]):
+                for axis, dim in [("temporalX", 0), ("temporalY", 1), ("temporalZ", 2)]:
+                    vec_curve[ind, dim] = mkr[axis][ind]
+        marker_dict[mkr_name]["curve"] = vec_curve
+
+    return marker_dict
 
 
 def save_dict_file(dict_content, fname):
