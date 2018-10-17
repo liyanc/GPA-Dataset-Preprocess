@@ -20,8 +20,9 @@ class CameraSolverNonlinear:
         init_cam = np.array([
             [f[0], 0, c[0]],
             [0, f[1], c[1]],
-            [0,    0,   1]])
-        flags = cv2.CALIB_USE_INTRINSIC_GUESS | cv2.CALIB_FIX_K4 | cv2.CALIB_FIX_K5 | cv2.CALIB_FIX_K6
+            [0, 0, 1]])
+        flags = cv2.CALIB_USE_INTRINSIC_GUESS + cv2.CALIB_FIX_K3 + cv2.CALIB_FIX_K4 + cv2.CALIB_FIX_K5 + \
+            cv2.CALIB_FIX_K6
         crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, iterations, term_epsilon)
         retval, cam, dist, rvecs, tvecs = cv2.calibrateCamera(
             [p_world.T.astype(np.float32)], [q_truth.T.astype(np.float32)], self.img_size, init_cam, None, flags=flags,
