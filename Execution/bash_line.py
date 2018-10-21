@@ -45,7 +45,7 @@ def cmd_mkdir(dir):
 
 
 def extract_tar(tar_list, dest_dir):
-    return [["tar", "-xzf", f, "-C", dest_dir + "/"] for f in tar_list]
+    return [["tar", "--use-compress-program=pigz", "-xf", f, "-C", dest_dir + "/"] for f in tar_list]
 
 
 def copy_list(src_list, dest_dir):

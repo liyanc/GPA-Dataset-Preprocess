@@ -22,7 +22,7 @@ class CameraSolverNonlinear:
             [0, f[1], c[1]],
             [0, 0, 1]])
         flags = cv2.CALIB_USE_INTRINSIC_GUESS + cv2.CALIB_FIX_K3 + cv2.CALIB_FIX_K4 + cv2.CALIB_FIX_K5 + \
-            cv2.CALIB_FIX_K6
+            cv2.CALIB_FIX_K6 + cv2.CALIB_FIX_S1_S2_S3_S4
         crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, iterations, term_epsilon)
         retval, cam, dist, rvecs, tvecs = cv2.calibrateCamera(
             [p_world.T.astype(np.float32)], [q_truth.T.astype(np.float32)], self.img_size, init_cam, None, flags=flags,
@@ -34,6 +34,12 @@ class CameraSolverNonlinear:
         self.t = tvecs[0]
 
         return self.cam, self.dist, self.theta, self.t
+
+    def dump_params(self):
+        return self.cam, self.dist, self.theta, self.t
+
+    def load_params(self, var_tuple):
+        self.cam, self.dist, self.theta, self.t = var_tuple
 
     def projection_errs(self, p_world, q_truth):
         proj_pts, _ = cv2.projectPoints(p_world.T, self.theta, self.t, self.cam, self.dist)
@@ -61,3 +67,13 @@ class CameraSolverNonlinear:
         cam_pts = np.concatenate(
             [(imgpt - K[:2, 2]) / K.diagonal()[:2], np.ones((imgpt.shape[0], 1))], 1) * z[:, np.newaxis]
         return np.matmul(R.T, cam_pts.T - self.t).T
+
+
+def build_pt_correspondence(cam_proj, unlabeled_dict, cam):
+    p_world, q_proj = np.zeros([len(cam_proj[cam]), 3], np.float32), np.zeros([len(cam_proj[cam]), 2], np.float32)
+    for ind, pt in enumerate(cam_proj[cam].items()):
+        mkr_id, proj_pt = pt
+        q_proj[ind, :] = proj_pt
+        p_world[ind, :] = unlabeled_dict[mkr_id]["mean"]
+
+    return p_world, q_proj

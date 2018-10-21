@@ -26,4 +26,4 @@ cmds = ex.extract_tar(tar_list, "{:}/{:}".format(args.dest_dir, args.day))
 for cam in ["camera3", "camera4"]:
     mp4_list = glob.glob("{:}/{:}/{:}/*.MP4".format(args.source_dir, args.day, cam))
     cmds += ex.copy_list(mp4_list, "{:}/{:}/{:}/".format(args.dest_dir, args.day, cam))
-ex.print_execution_result(ex.bash_line_pool(cmds, 2))
+ex.print_execution_result(ex.bash_line_pool(cmds, 1))
