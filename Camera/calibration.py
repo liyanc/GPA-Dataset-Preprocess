@@ -36,10 +36,10 @@ class CameraSolverNonlinear:
         return self.cam, self.dist, self.theta, self.t
 
     def dump_params(self):
-        return self.cam, self.dist, self.theta, self.t
+        return self.cam, self.dist, self.theta, self.t, self.img_size
 
     def load_params(self, var_tuple):
-        self.cam, self.dist, self.theta, self.t = var_tuple
+        self.cam, self.dist, self.theta, self.t, self.img_size = var_tuple
 
     def projection_errs(self, p_world, q_truth):
         proj_pts, _ = cv2.projectPoints(p_world.T, self.theta, self.t, self.cam, self.dist)

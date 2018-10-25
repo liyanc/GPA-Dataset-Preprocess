@@ -32,13 +32,16 @@ def get_marker_id(img, cam, unlabeled_dict, cam_proj, clicks=0, radius=4, alpha=
     # Show image for clicking
     cam_proj[cam] = {}
     click_fig = plt.figure()
-    plt.imshow(img)
+    ax = click_fig.add_subplot(111)
+    ax.grid(False)
+    ax.imshow(img)
     pts = plt.ginput(clicks, timeout=0, show_clicks=True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     print("close the old window now.")
 
     # Show image for matching
     mtch_fig = plt.figure()
     ax = mtch_fig.add_subplot(111)
+    ax.grid(False)
     ax.imshow(img)
     dot = ptch.Circle((0, 0), radius=radius, color="red", alpha=alpha)
     ax.add_artist(dot)

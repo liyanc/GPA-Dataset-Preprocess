@@ -18,7 +18,7 @@ def imread_from_lz4(fname):
     bufsize = 6221000
     dst = ctypes.create_string_buffer(bufsize)
     lz4.LZ4_decompress_safe(contents, dst, len(contents), bufsize)
-    return cv2.imdecode(np.frombuffer(dst.raw), cv2.IMREAD_ANYCOLOR)[:, ::-1, :]
+    return cv2.imdecode(np.frombuffer(dst.raw), cv2.IMREAD_ANYCOLOR)[:, ::-1, ::-1]
 
 
 def lz4_mean_img(f_list):

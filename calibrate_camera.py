@@ -3,9 +3,8 @@
 
 __author__ = "Liyan Chen"
 
-import matplotlib
 import argparse
-import pickle
+import cv2
 import numpy as np
 import FileIO as fio
 import UI as ui
@@ -23,7 +22,9 @@ parser.add_argument("marker_file", type=str)
 parser.add_argument("camproj_file", type=str)
 parser.add_argument("camparam_file", type=str)
 parser.add_argument("report_file", type=str)
+parser.add_argument("side_out_prefix", type=str)
 args = parser.parse_args()
+apath = fio.ArgPathBuilder(args)
 
 unlabeled_dict = fio.load_pkl("{:}/{:}".format(args.root_dir, args.marker_file), True)
 cam_proj = fio.load_pkl("{:}/{:}".format(args.root_dir, args.camproj_file))
@@ -52,6 +53,7 @@ for cam, filepath in [
     linear_img = csolver.undistort_img(mean_img)
     linear_pts = csolver.undistort_pts(q_proj.T)
     reproj = csolver.project_linear(p_world.T)
+    cv2.imwrite(apath.side_out_prefix + "_{:}.png".format(cam), linear_img * 255.0)
 
     ax = fig.add_subplot(5, 2, figind)
     ui.show_clicks_reporj_on_img(ax, linear_img, linear_pts, reproj, cam)
@@ -80,6 +82,7 @@ for cam in ["00", "01", "02"]:
     linear_img = csolver.undistort_img(mean_img)
     linear_pts = csolver.undistort_pts(q_proj.T)
     reproj = csolver.project_linear(p_world.T)
+    cv2.imwrite(apath.side_out_prefix + "_{:}.png".format(cam), linear_img * 255.0)
 
     ax = fig.add_subplot(5, 2, figind)
     ui.show_clicks_reporj_on_img(ax, linear_img, linear_pts, reproj, cam)
