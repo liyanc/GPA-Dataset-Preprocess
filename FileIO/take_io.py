@@ -6,8 +6,10 @@ __author__ = "Liyan Chen"
 import glob
 import os
 import re
+import csv
 import FileIO as fio
 import numpy as np
+import scipy.io as sio
 from collections import defaultdict
 from .marker_name import *
 
@@ -49,6 +51,7 @@ class MarkerDirIO:
         for f in glob.glob("{:}/*.pkl".format(rt_path)):
             fname = os.path.basename(f)
             sub = fname.split("_")[0]
+            sub = "deying" if sub == "deyingi" else sub
             take = ptn.search(fname).group(0)
             self.subj_take_file[sub][take] = f
 
@@ -73,15 +76,53 @@ class MarkerDirIO:
 
 class BVHDirIO:
     def __init__(self, rt_path):
-        self.subj_take_file = defaultdict(dict)
+        self.subj_take_table = defaultdict(dict)
         ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
+
+        csv_fname = "{:}/discarded_frames.csv".format(rt_path)
+        with open(csv_fname) as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if len(row[1]) > 1 and ptn.search(row[1]) is not None:
+                    _, fname, is_test, is_discarded, start, end = row[:6]
+                    if is_discarded == "FALSE":
+                        sub = fname.split("_")[0]
+                        take = ptn.search(fname).group(0)
+                        sub = "deying" if sub == "deyingi" else sub
+
+                        remove_list = []
+                        for pair in row[6:]:
+                            try:
+                                b, e = pair.split("-")
+                            except ValueError:
+                                pass
+                            else:
+                                b, e = int(b), int(e)
+                                remove_list.append((b, e))
+                        self.subj_take_table[sub][take] = {
+                            "is_test": is_test == "TRUE", "is_discarded": is_discarded == "TRUE",
+                            "start": int(start.replace(",", "")),
+                            "end": int(end.replace(",", "")) if len(end) > 1 else None, "remove": remove_list}
+
         for f in glob.glob("{:}/*.mat".format(rt_path)):
             fname = os.path.basename(f)
             sub = fname.split("_")[0]
             take = ptn.search(fname).group(0)
-            self.subj_take_file[sub][take] = f
+            sub = "deying" if sub == "deyingi" else sub
+            try:
+                self.subj_take_table[sub][take]["file"] = f
+            except KeyError:
+                pass
 
+    def load_joint_curve(self, subj, take):
+        joints = sio.loadmat(self.subj_take_table[subj][take]["file"])["xyz_c"].astype(np.float64)
+        start = self.subj_take_table[subj][take]["start"]
 
+        pre_pad = np.zeros((start, 34, 3), dtype=np.float64) - np.nan
+        adj_joints = np.concatenate((pre_pad, joints))
+        for b, e in self.subj_take_table[subj][take]["remove"]:
+            adj_joints[b:(e + 1), :, :] = np.nan
+        return adj_joints
 
 
 class VideoDirIO:

@@ -70,6 +70,8 @@ class CameraSolverNonlinear:
 
 
 def build_pt_correspondence(cam_proj, unlabeled_dict, cam):
+    if -1 in cam_proj[cam]:
+        del cam_proj[cam][-1]
     p_world, q_proj = np.zeros([len(cam_proj[cam]), 3], np.float32), np.zeros([len(cam_proj[cam]), 2], np.float32)
     for ind, pt in enumerate(cam_proj[cam].items()):
         mkr_id, proj_pt = pt
