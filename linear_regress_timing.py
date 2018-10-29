@@ -24,6 +24,7 @@ parser.add_argument("marker_dir", type=str)
 parser.add_argument("bvh_dir", type=str)
 parser.add_argument("camparam_file", type=str)
 parser.add_argument("timecorr_file", type=str)
+parser.add_argument("timeparam_file", type=str)
 args = parser.parse_args()
 apath = fio.ArgPathBuilder(args)
 
@@ -37,12 +38,12 @@ joint_io = fio.BVHDirIO(apath.bvh_dir)
 img_reader = fio.ImgProjReader(cam_dict, imgdir_io, viddir_io)
 mkr_reader = fio.MarkerSkeletonProjReader(cam_dict, marker_io, joint_io, subj, takename)
 
-offset = 0
-time_corr_dict = {}
+timeparam_dict = {}
+time_corr_dict = fio.load_pkl(apath.timecorr_file)
 for cam in ["00", "01", "02", "03", "04"]:
-    if cam in ["03", "04"]:
-        offset = 0
-    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, offset)
-    offset = wind.run()
-    time_corr_dict[cam] = wind.get_time_corr()
-fio.dump_pkl(time_corr_dict, apath.timecorr_file)
+    scale, offset, total, inlier = camsolve.ransac_linear_regress(time_corr_dict[cam])
+    print("{:}, inlier percentage: {:.2f}%, total: {:}".format(cam, inlier * 100.0 / total, total))
+    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, 0)
+    wind.load_affine_params((scale[0], offset))
+    wind.run()
+fio.dump_pkl(timeparam_dict, apath.timeparam_file)

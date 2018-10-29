@@ -75,6 +75,8 @@ class MarkerDirIO:
 
 
 class BVHDirIO:
+    sub_ind = [0,24,25,26,29,30,31,2,5,6,7,17,18,19,9,10,11]
+
     def __init__(self, rt_path):
         self.subj_take_table = defaultdict(dict)
         ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
@@ -118,11 +120,11 @@ class BVHDirIO:
         joints = sio.loadmat(self.subj_take_table[subj][take]["file"])["xyz_c"].astype(np.float64)
         start = self.subj_take_table[subj][take]["start"]
 
-        pre_pad = np.zeros((start, 34, 3), dtype=np.float64) - np.nan
+        pre_pad = np.zeros((start - 1, 34, 3), dtype=np.float64) - np.nan
         adj_joints = np.concatenate((pre_pad, joints))
         for b, e in self.subj_take_table[subj][take]["remove"]:
             adj_joints[b:(e + 1), :, :] = np.nan
-        return adj_joints
+        return adj_joints[:, self.sub_ind, ] * 2.54 # Convert from inch to cm
 
 
 class VideoDirIO:
@@ -188,14 +190,22 @@ class ImgProjReader:
         self.viddir_io.close(cam)
 
 
-class MarkerProjReader:
-    def __init__(self, cam_dict, marker_io, subj, takename):
+class MarkerSkeletonProjReader:
+    def __init__(self, cam_dict, marker_io, joint_io, subj, takename):
         self.cam_dict = cam_dict
         self.marker_io = marker_io
+        self.joint_io = joint_io
         self.skel_curv = self.marker_io.load_marker_curve(subj, takename)
+        self.joint_curv = self.joint_io.load_joint_curve(subj, takename)
 
     def read_skel(self, ind, cam):
         return self.cam_dict[cam].project_linear(self.skel_curv[ind, :, :].T.astype(np.float64))
+
+    def read_joint(self, ind, cam):
+        if ind >= self.joint_curv.shape[0] or ind < 0:
+            return np.zeros((34, 3), np.float64) + np.nan
+        else:
+            return self.cam_dict[cam].project_linear(self.joint_curv[ind, :, :].T.astype(np.float64))
 
     def get_frame_num(self):
         return self.skel_curv.shape[0]
