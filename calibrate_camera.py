@@ -36,7 +36,6 @@ figind = 0
 for cam, filepath in [
     ("03", "{:}/{:}".format(args.root_dir, args.cam3_filename)),
     ("04", "{:}/{:}".format(args.root_dir, args.cam4_filename))]:
-
     # Load Image and its parameters
     mean_img = fio.video_mean_frame(filepath)
     img_size = np.array(mean_img.shape[:2])
@@ -69,7 +68,6 @@ for cam in ["00", "01", "02"]:
     mean_img = fio.lz4_mean_img(fio.list_img_cam(imgdir, cam))
     img_size = np.array(mean_img.shape[:2])
     init_c = img_size / 2
-
 
     # Build correspondences and solve
     p_world, q_proj = camsolve.build_pt_correspondence(cam_proj, unlabeled_dict, cam)

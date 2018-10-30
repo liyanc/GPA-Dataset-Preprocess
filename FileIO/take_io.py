@@ -198,6 +198,9 @@ class MarkerSkeletonProjReader:
         self.skel_curv = self.marker_io.load_marker_curve(subj, takename)
         self.joint_curv = self.joint_io.load_joint_curve(subj, takename)
 
+    def read_raw_skel(self, ind):
+        return self.skel_curv[ind, :]
+
     def read_skel(self, ind, cam):
         return self.cam_dict[cam].project_linear(self.skel_curv[ind, :, :].T.astype(np.float64))
 

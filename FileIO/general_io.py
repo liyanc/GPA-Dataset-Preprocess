@@ -30,9 +30,14 @@ def load_cam(camparam_file):
     return cam_dict
 
 
+def dump_cam(cam_dict):
+    return dict((k, v.dump_params) for k, v in cam_dict.items())
+
+
 class ArgPathBuilder:
     def __init__(self, args):
         self.args = args
 
     def __getattr__(self, item):
         return "{:}/{:}".format(self.args.root_dir, vars(self.args)[item])
+

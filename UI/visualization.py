@@ -4,8 +4,10 @@
 __author__ = "Liyan Chen"
 
 import numpy as np
+import FileIO as fio
 from matplotlib import pyplot as plt
 from matplotlib import widgets as wdgt
+from matplotlib import patches as ptch
 
 
 def show_clicks_reporj_on_img(ax, img, clicks, reproj, cam):
@@ -54,7 +56,7 @@ class TimeAlignmentWindow:
     kinect_frame_int = 26.66666666666666666666666666666667
     dlsr_frame_int = 33.333333333333333333333333333333
 
-    def __init__(self, cam, img_reader, mkr_reader, base_offset=0, render_int=10):
+    def __init__(self, cam, img_reader, mkr_reader, base_offset=0, render_int=10, title_pretext=None):
         # Initialize states
         self.render_int = render_int
         self.cam = cam
@@ -66,6 +68,9 @@ class TimeAlignmentWindow:
         self.frame_int = self.kinect_frame_int if cam in self.img_reader.kinect_cam else self.dlsr_frame_int
         self.time_correspondece = []
         self.affine_param = None
+        self.q_proj = []
+        self.p_world = []
+        self.title_pretext = title_pretext
 
         self.offset = base_offset
         init_img, self.cam_t0 = img_reader.read_img_ts(0, cam)
@@ -77,6 +82,7 @@ class TimeAlignmentWindow:
 
         # Initialize GUI
         self.fig = plt.figure()
+        self.fig.canvas.set_window_title("{:}: Camera {:}".format(title_pretext, self.cam))
         self.imgax = plt.subplot(111)
         plt.subplots_adjust(bottom=0.15, top=1.0, left=0.05, right=0.95)
         self.cslider_ax = plt.axes([0.1, 0.1, 0.8, 0.03])
@@ -115,7 +121,7 @@ class TimeAlignmentWindow:
 
     def on_cam_slider(self, val):
         self.update_cam_ind(int(self.cam_slider.val))
-        if self.ctrl_pressed:
+        if self.ctrl_pressed or self.affine_param is not None:
             self.skel_slider.set_val(self.get_mocap_ind())
 
     def on_skel_slider(self, val):
@@ -145,13 +151,33 @@ class TimeAlignmentWindow:
 
         elif event.key == "ctrl+q":
             self.time_correspondece.append((self.cam_ts, self.skel_ind))
+            print("Valid time alignments: ", len(self.time_correspondece))
 
         # In-take Calibration
         elif event.key == "ctrl+a":
             pts = plt.ginput(-1, 0, show_clicks=True)
-            x_pts, y_pts = [p[0] for p in pts], [p[1] for p in pts]
-            self.imgax.plot(x_pts, y_pts, "gx")
+            self.marker_name(pts)
+
+    def marker_name(self, pts):
+        skel_pts = self.mkr_reader.read_raw_skel(int(round(self.skel_ind)))
+        dot = ptch.Circle((0, 0), radius=4, alpha=0.8, color="orange")
+        self.imgax.add_patch(dot)
+        for pt in pts:
+            dot.center = pt
             self.fig.canvas.draw()
+
+            while True:
+                dot_ind = input("Input marker id (-1 for invalid points): ").upper()
+                if dot_ind in fio.marker2id or dot_ind.strip() == "-1":
+                    break
+
+            if dot_ind.strip() != "-1" and np.all(~np.isnan(skel_pts[fio.marker2id[dot_ind], :])):
+                self.q_proj.append(pt)
+                self.p_world.append(skel_pts[fio.marker2id[dot_ind], :])
+
+        dot.remove()
+        self.fig.canvas.draw()
+        print("Valid points, ", len(self.p_world))
 
     def on_release_key(self, event):
         if event.key == "control":
@@ -173,14 +199,17 @@ class TimeAlignmentWindow:
         self.fig.canvas.mpl_connect("key_press_event", self.on_key)
         self.fig.canvas.mpl_connect("key_release_event", self.on_release_key)
 
-    def run(self):
+    def run(self, auto_close=True):
         plt.show()
-        if self.cam not in self.img_reader.kinect_cam:
+        if self.cam not in self.img_reader.kinect_cam and auto_close:
             self.img_reader.close(self.cam)
         return self.offset
 
     def get_time_corr(self):
         return self.time_correspondece
+
+    def get_pt_correspondence(self):
+        return np.array(self.p_world), np.array(self.q_proj)
 
     def load_affine_params(self, params):
         self.affine_param = params

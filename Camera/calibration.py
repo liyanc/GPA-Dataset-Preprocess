@@ -8,7 +8,7 @@ import numpy as np
 
 
 class CameraSolverNonlinear:
-    def __init__(self, init_f=(1125.0, 1125.0), init_c=(500.0, 500.0), img_size=(1000, 1000)):
+    def __init__(self, init_f=(1125.0, 1125.0), init_c=(960.0, 540.0), img_size=(1920, 1080)):
         self.init_f = init_f
         self.init_c = init_c
         self.img_size = img_size
@@ -79,3 +79,11 @@ def build_pt_correspondence(cam_proj, unlabeled_dict, cam):
         p_world[ind, :] = unlabeled_dict[mkr_id]["mean"]
 
     return p_world, q_proj
+
+
+def calibrate_params(p_world, q_proj):
+    mask = ~np.any(np.isnan(p_world), axis=1)
+    p_world, q_proj = p_world[mask].T, q_proj[mask].T
+    csolver = CameraSolverNonlinear()
+    csolver.solve(p_world.astype(np.float64), q_proj.astype(np.float64))
+    return csolver.dump_params()

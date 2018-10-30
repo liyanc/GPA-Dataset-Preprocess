@@ -7,6 +7,7 @@ __author__ = "Liyan Chen"
 import multiprocessing as mp
 import subprocess as sp
 import time
+import os
 
 
 def bash_line_pool(cmds, pool_size=mp.cpu_count(), sleep_time=0.05):
@@ -33,6 +34,10 @@ def bash_line_pool(cmds, pool_size=mp.cpu_count(), sleep_time=0.05):
         proc.stdout.close()
 
     return cmd_res
+
+
+def run_command(cmd):
+    os.system(" ".join(iter(cmd)))
 
 
 def print_execution_result(cmd_res):

@@ -42,7 +42,7 @@ time_corr_dict = {}
 for cam in ["00", "01", "02", "03", "04"]:
     if cam in ["03", "04"]:
         offset = 0
-    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, offset)
+    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, offset, title_pretext="Temporal alignment (Remember Incorrect Cameras)")
     offset = wind.run()
     time_corr_dict[cam] = wind.get_time_corr()
 fio.dump_pkl(time_corr_dict, apath.timecorr_file)
