@@ -124,7 +124,7 @@ class BVHDirIO:
         adj_joints = np.concatenate((pre_pad, joints))
         for b, e in self.subj_take_table[subj][take]["remove"]:
             adj_joints[b:(e + 1), :, :] = np.nan
-        return adj_joints[:, self.sub_ind, ] * 2.54 # Convert from inch to cm
+        return adj_joints * 2.54 # Convert from inch to cm
 
 
 class VideoDirIO:
