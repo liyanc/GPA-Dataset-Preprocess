@@ -10,6 +10,7 @@ import csv
 import FileIO as fio
 import numpy as np
 import scipy.io as sio
+import Camera as camsolve
 from collections import defaultdict
 from .marker_name import *
 
@@ -77,6 +78,7 @@ class MarkerDirIO:
 class TimeParamDir:
     def __init__(self, dir_path):
         self.subj_take_table = defaultdict(dict)
+        self.params_subj_take_table = defaultdict(dict)
         ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
         for f in glob.glob("{:}/*timecorr.pkl".format(dir_path)):
             fname = os.path.basename(f)
@@ -84,8 +86,15 @@ class TimeParamDir:
             take = ptn.search(fname).group(0)
             self.subj_take_table[sub][take] = f
 
+            corr = fio.load_pkl(f)
+            timeparam_dict = dict((k, camsolve.ransac_linear_regress(v)) for (k, v) in corr.items())
+            self.params_subj_take_table[sub][take] = timeparam_dict
+
     def get_timecorr(self, subj, takename):
         return self.subj_take_table[subj][takename]
+
+    def get_timeparam(self, subj, takename):
+        return self.params_subj_take_table[subj][takename]
 
 
 class CamParamDir:
