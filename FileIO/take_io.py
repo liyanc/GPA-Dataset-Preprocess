@@ -74,6 +74,42 @@ class MarkerDirIO:
         return skel_curv
 
 
+class TimeParamDir:
+    def __init__(self, dir_path):
+        self.subj_take_table = defaultdict(dict)
+        ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
+        for f in glob.glob("{:}/*timecorr.pkl".format(dir_path)):
+            fname = os.path.basename(f)
+            sub = fname.split("_")[0]
+            take = ptn.search(fname).group(0)
+            self.subj_take_table[sub][take] = f
+
+    def get_timecorr(self, subj, takename):
+        return self.subj_take_table[subj][takename]
+
+
+class CamParamDir:
+    block_list = [
+        ("liyan", "action_00", "04"), ("liyan", "zw_static_02", "04"), ("haoyu", "action_00", "03"),
+        ("haoyu", "action_01", "03"), ("haoyu", "zw_static_03", "03"), ("haoyu", "zw_static_03", "04"),
+        ("jingwen", "motion_00", "03"), ("jingwen", "motion_02", "03"), ("yan", "zw_static_01", "04")]
+
+    def __init__(self, dir_path):
+        self.subj_take_table = defaultdict(dict)
+        ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
+        for f in glob.glob("{:}/*_camparams.pkl".format(dir_path)):
+            fname = os.path.basename(f)
+            sub = fname.split("_")[0]
+            take = ptn.search(fname).group(0)
+            self.subj_take_table[sub][take] = f
+
+    def get_camparam_file(self, subj, takename):
+        return self.subj_take_table[subj][takename]
+
+    def is_blocklisted(self, subj, takename, cam):
+        return (subj, takename, cam) in self.block_list
+
+
 class BVHDirIO:
     sub_ind = [0,24,25,26,29,30,31,2,5,6,7,17,18,19,9,10,11]
 
@@ -201,6 +237,9 @@ class MarkerSkeletonProjReader:
     def read_raw_skel(self, ind):
         return self.skel_curv[ind, :]
 
+    def read_raw_joint(self, ind):
+        return self.joint_curv[ind, :]
+
     def read_skel(self, ind, cam):
         return self.cam_dict[cam].project_linear(self.skel_curv[ind, :, :].T.astype(np.float64))
 
@@ -212,3 +251,6 @@ class MarkerSkeletonProjReader:
 
     def get_frame_num(self):
         return self.skel_curv.shape[0]
+
+    def get_joint_frame_num(self):
+        return self.joint_curv.shape[0]
