@@ -76,6 +76,7 @@ class MarkerDirIO:
 
 
 class TimeParamDir:
+
     def __init__(self, dir_path):
         self.subj_take_table = defaultdict(dict)
         self.params_subj_take_table = defaultdict(dict)
@@ -87,7 +88,9 @@ class TimeParamDir:
             self.subj_take_table[sub][take] = f
 
             corr = fio.load_pkl(f)
-            timeparam_dict = dict((k, camsolve.ransac_linear_regress(v)) for (k, v) in corr.items())
+            timeparam_dict = dict(
+                (cam, camsolve.ransac_linear_regress(v)) for (cam, v) in corr.items() if
+                (sub, take, cam) not in CamParamDir.block_list)
             self.params_subj_take_table[sub][take] = timeparam_dict
 
     def get_timecorr(self, subj, takename):
@@ -95,6 +98,10 @@ class TimeParamDir:
 
     def get_timeparam(self, subj, takename):
         return self.params_subj_take_table[subj][takename]
+
+    def map_cam_timestamp_2mocap(self, subj, takename, cam, timestamp):
+        scale,  offset, _, _ = self.params_subj_take_table[subj][takename][cam]
+        return timestamp * scale[0] + offset
 
 
 class CamParamDir:
@@ -120,7 +127,7 @@ class CamParamDir:
 
 
 class BVHDirIO:
-    sub_ind = [0,24,25,26,29,30,31,2,5,6,7,17,18,19,9,10,11]
+    sub_ind = [0, 24, 25, 26, 29, 30, 31, 2, 5, 6, 7, 17, 18, 19, 9, 10, 11]
 
     def __init__(self, rt_path):
         self.subj_take_table = defaultdict(dict)
@@ -169,7 +176,7 @@ class BVHDirIO:
         adj_joints = np.concatenate((pre_pad, joints))
         for b, e in self.subj_take_table[subj][take]["remove"]:
             adj_joints[b:(e + 1), :, :] = np.nan
-        return adj_joints * 2.54 # Convert from inch to cm
+        return adj_joints * 2.54  # Convert from inch to cm
 
 
 class VideoDirIO:
@@ -178,15 +185,15 @@ class VideoDirIO:
         self.cam_reader = {}
         ptn = re.compile("(action_\d{2})|(motion_\d{2})|(zw_static_\d{2})")
         for cam_name, cam in [("camera3", "03"), ("camera4", "04")]:
-            for f in glob.glob("{:}/{:}/*.MP4".format(rt_path, cam_name)):
-                fname = os.path.basename(f)
-                sub = fname.split("_")[0]
-                match = ptn.search(fname)
-                if match is not None:
-                    take = match.group(0)
-                    self.cam_subj_take_file[cam][sub][take] = f
-            self.cam_reader[cam] = fio.VideoReader(self.cam_subj_take_file[cam][assigned_subj][assigned_take])
-
+            if (assigned_subj, assigned_take, cam) not in CamParamDir.block_list:
+                for f in glob.glob("{:}/{:}/*.MP4".format(rt_path, cam_name)):
+                    fname = os.path.basename(f)
+                    sub = fname.split("_")[0]
+                    match = ptn.search(fname)
+                    if match is not None:
+                        take = match.group(0)
+                        self.cam_subj_take_file[cam][sub][take] = f
+                self.cam_reader[cam] = fio.VideoReader(self.cam_subj_take_file[cam][assigned_subj][assigned_take])
 
     def list_subjects(self, cam):
         return list(self.cam_subj_take_file[cam].keys())
@@ -197,6 +204,10 @@ class VideoDirIO:
     def read_cam_frame_ts(self, cam, ind):
         return self.cam_reader[cam].read_frame_ts(ind)
 
+    def read_cam_ts(self, cam):
+        max_frame = self.cam_reader[cam].get_max_frame()
+        return list(x * 33.36666666666667 for x in range(max_frame))
+
     def get_max_frame(self, cam):
         return self.cam_reader[cam].get_max_frame()
 
@@ -205,7 +216,7 @@ class VideoDirIO:
 
 
 class ImgProjReader:
-    equiv_mocap_frame = {"00": 4, "01": 4, "02": 4, "03": 4, "04":4}
+    equiv_mocap_frame = {"00": 4, "01": 4, "02": 4, "03": 4, "04": 4}
     kinect_cam = ["00", "01", "02"]
 
     def __init__(self, cam_dict, imgdir_io, viddir_io):
