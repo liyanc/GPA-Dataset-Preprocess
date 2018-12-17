@@ -42,6 +42,6 @@ for cam in ["00", "01", "02", "03", "04"]:
     scale, offset, total, inlier = camsolve.ransac_linear_regress(time_corr_dict[cam])
     print("{:}, inlier percentage: {:.2f}%, total: {:}".format(cam, inlier * 100.0 / total, total))
 
-    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, 0, title_pretext="Correct Calibration")
+    wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, 0, title_pretext="Replay")
     wind.load_affine_params((scale[0], offset))
     wind.run()
