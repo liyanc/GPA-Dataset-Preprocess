@@ -49,7 +49,7 @@ for cam in ["00", "01", "02", "03", "04"]:
     print("{:}, inlier percentage: {:.2f}%, total: {:}".format(cam, inlier * 100.0 / total, total))
     if cam in recalib_cam:
 
-        wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, 0, title_pretext="Correct Calibration")
+        wind = ui.TimeAlignmentWindow(cam, img_reader, mkr_reader, 0, title_pretext="Correct Calibration", is_undistort=False)
         wind.load_affine_params((scale[0], offset))
         wind.run(auto_close=False)
         recalib_proj_dict[cam] = wind.get_pt_correspondence()
@@ -65,5 +65,7 @@ for cam in ["00", "01", "02", "03", "04"]:
 
 fio.dump_pkl(timeparam_dict, apath.timeparam_file)
 fio.dump_pkl(fio.dump_cam(cam_dict), "{:}/{:}_{:}_camparams.pkl".format(apath.camproj_dir, subj, takename))
+print("Saved parameters:", "{:}/{:}_{:}_camparams.pkl".format(apath.camproj_dir, subj, takename))
 if recalib_cam:
     fio.dump_pkl(recalib_proj_dict, "{:}/{:}_{:}_camproj.pkl".format(apath.camproj_dir, subj, takename))
+    print("Saved annotations:", "{:}/{:}_{:}_camproj.pkl".format(apath.camproj_dir, subj, takename))

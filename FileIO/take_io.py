@@ -109,6 +109,7 @@ class CamParamDir:
         ("liyan", "action_00", "04"), ("liyan", "zw_static_02", "04"), ("haoyu", "action_00", "03"),
         ("haoyu", "action_01", "03"), ("haoyu", "zw_static_03", "03"), ("haoyu", "zw_static_03", "04"),
         ("jingwen", "motion_00", "03"), ("jingwen", "motion_02", "03"), ("yan", "zw_static_01", "04")]
+    block_list = []
 
     def __init__(self, dir_path):
         self.subj_take_table = defaultdict(dict)
@@ -224,14 +225,27 @@ class ImgProjReader:
         self.imgdir_io = imgdir_io
         self.viddir_io = viddir_io
 
-    def read_img_ts(self, ind, cam):
+    def read_img_ts(self, ind, cam, is_undistort=True):
         # In case where camera is a kinect one
         if cam in self.kinect_cam:
             imgfile, imgts = self.imgdir_io.get_imgfile_timestamp(cam)[ind]
-            return self.cam_dict[cam].undistort_img(fio.imread_from_lz4(imgfile)), imgts
+            if is_undistort:
+                return self.cam_dict[cam].undistort_img(fio.imread_from_lz4(imgfile)), imgts
+            else:
+                return fio.imread_from_lz4(imgfile), imgts
         else:
             frame, ts = self.viddir_io.read_cam_frame_ts(cam, ind)
-            return self.cam_dict[cam].undistort_img(frame), ts
+            if is_undistort:
+                return self.cam_dict[cam].undistort_img(frame), ts
+            else:
+                return frame, ts
+
+    def read_ts(self, ind, cam):
+        if cam in self.kinect_cam:
+            _, imgts = self.imgdir_io.get_imgfile_timestamp(cam)[ind]
+            return imgts
+        else:
+            return 33.36666666666667 * ind
 
     def get_frame_num_for_cam(self, cam):
         if cam in self.kinect_cam:

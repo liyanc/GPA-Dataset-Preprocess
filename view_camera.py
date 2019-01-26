@@ -27,21 +27,19 @@ camparam_file = "meta_mid/cameras/{:}".format(subj2camparam[subj])
 timecorr_file = "meta_mid/alignments/{:}_{:}_timecorr.pkl".format(subj, takename)
 timeparam_file = "meta_mid/alignments/{:}_{:}_timeparams.pkl".format(subj, takename)
 newcam_dir = "meta_mid/cameras/subj_take/"
+newcam_param = "meta_mid/cameras/subj_take/{:}_{:}_camparams.pkl".format(subj, takename)
+pnp_param = "meta_mid/cameras/solvepnp_params/{:}_{:}_camparams.pkl".format(subj, takename)
 
-is_replay = input("Replay or Not (True or False): ").strip().lower() == "true"
-is_only_cam = input("Only calibrate camera (True or False): ").strip().lower() == "true"
-
-if not is_replay:
-    if not is_only_cam:
-        print("Remember cameras that look incorrect!")
-        cmd = ["python3", align_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-               camparam_file, timecorr_file]
-        exe.run_command(cmd)
-
-    cmd = ["python3", calib_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-           camparam_file, timecorr_file, timeparam_file, newcam_dir]
-    exe.run_command(cmd)
+opt_params = [camparam_file, newcam_param, pnp_param]
+cam_opt = int(input(
+    "Camera options: 0: from static geometry; 1: from 1st calibration pass; 2: from solvepnp; 3: input: ").strip())
+if cam_opt in range(0, 3):
+    cam_loadfile = opt_params[cam_opt]
+elif cam_opt == 3:
+    cam_loadfile = input("Type camera parameter file: ")
 else:
-    cmd = ["python3", replay_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-           camparam_file, timecorr_file]
-    exe.run_command(cmd)
+    raise ValueError("illegal option {:}".format(cam_opt))
+
+cmd = ["python3", replay_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
+       cam_loadfile, timecorr_file]
+exe.run_command(cmd)

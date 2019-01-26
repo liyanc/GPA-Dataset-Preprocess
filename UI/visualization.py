@@ -56,7 +56,7 @@ class TimeAlignmentWindow:
     kinect_frame_int = 26.66666666666666666666666666666667
     dlsr_frame_int = 33.333333333333333333333333333333
 
-    def __init__(self, cam, img_reader, mkr_reader, base_offset=0, render_int=10, title_pretext=None):
+    def __init__(self, cam, img_reader, mkr_reader, base_offset=0, render_int=10, title_pretext=None, is_undistort=True):
         # Initialize states
         self.render_int = render_int
         self.cam = cam
@@ -65,6 +65,7 @@ class TimeAlignmentWindow:
         self.timer_running = False
         self.allowed_update_offset = True
         self.ctrl_pressed = False
+        self.is_undistort = is_undistort
         self.frame_int = self.kinect_frame_int if cam in self.img_reader.kinect_cam else self.dlsr_frame_int
         self.time_correspondece = []
         self.affine_param = None
@@ -73,7 +74,7 @@ class TimeAlignmentWindow:
         self.title_pretext = title_pretext
 
         self.offset = base_offset
-        init_img, self.cam_t0 = img_reader.read_img_ts(0, cam)
+        init_img, self.cam_t0 = img_reader.read_img_ts(0, cam, self.is_undistort)
         self.cam_ts = self.cam_t0
         self.cam_ind, max_cam_ind = 0, img_reader.get_frame_num_for_cam(cam) - 1
         self.skel_ind, max_skel_ind = self.get_mocap_ind(), mkr_reader.get_frame_num() - 1
@@ -109,7 +110,7 @@ class TimeAlignmentWindow:
 
     def update_cam_ind(self, new_cam_ind):
         self.cam_ind = new_cam_ind
-        img, self.cam_ts = self.img_reader.read_img_ts(self.cam_ind, self.cam)
+        img, self.cam_ts = self.img_reader.read_img_ts(self.cam_ind, self.cam, self.is_undistort)
         self.update_offset()
         self.img_pts_render.update_img(img)
 

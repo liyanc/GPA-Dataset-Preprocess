@@ -31,7 +31,7 @@ def load_cam(camparam_file):
 
 
 def dump_cam(cam_dict):
-    return dict((k, v.dump_params) for k, v in cam_dict.items())
+    return dict((k, v.dump_params()) for k, v in cam_dict.items())
 
 
 class ArgPathBuilder:

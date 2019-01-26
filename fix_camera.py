@@ -27,21 +27,18 @@ camparam_file = "meta_mid/cameras/{:}".format(subj2camparam[subj])
 timecorr_file = "meta_mid/alignments/{:}_{:}_timecorr.pkl".format(subj, takename)
 timeparam_file = "meta_mid/alignments/{:}_{:}_timeparams.pkl".format(subj, takename)
 newcam_dir = "meta_mid/cameras/subj_take/"
+newcam_param = "meta_mid/cameras/subj_take/{:}_{:}_camparams.pkl".format(subj, takename)
 
-is_replay = input("Replay or Not (True or False): ").strip().lower() == "true"
-is_only_cam = input("Only calibrate camera (True or False): ").strip().lower() == "true"
+replace_cam = input("Do you want to load camera from another file? -1 to ignore ")
+if replace_cam.strip() != "-1":
+    camparam_file = replace_cam
 
-if not is_replay:
-    if not is_only_cam:
-        print("Remember cameras that look incorrect!")
-        cmd = ["python3", align_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-               camparam_file, timecorr_file]
-        exe.run_command(cmd)
+cmd = ["python3", calib_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
+       camparam_file, timecorr_file, timeparam_file, newcam_dir]
+exe.run_command(cmd)
 
-    cmd = ["python3", calib_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-           camparam_file, timecorr_file, timeparam_file, newcam_dir]
-    exe.run_command(cmd)
-else:
-    cmd = ["python3", replay_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
-           camparam_file, timecorr_file]
-    exe.run_command(cmd)
+is_replay = input("Replay from new camera (0) or the old (1)?")
+cam_file = newcam_param if is_replay == "0" else camparam_file
+cmd = ["python3", replay_prog, root_dir, "{:},{:}".format(subj, takename), day_subdir, marker_dir, bvh_dir,
+       cam_file, timecorr_file]
+exe.run_command(cmd)
