@@ -12,6 +12,7 @@ import numpy as np
 import scipy.io as sio
 import Camera as camsolve
 from collections import defaultdict
+from scipy.io import loadmat
 from .marker_name import *
 
 
@@ -215,6 +216,10 @@ class VideoDirIO:
     def close(self, cam):
         self.cam_reader[cam].close()
 
+    def close_all(self):
+        for cam in self.cam_reader:
+            self.cam_reader[cam].close()
+
 
 class ImgProjReader:
     equiv_mocap_frame = {"00": 4, "01": 4, "02": 4, "03": 4, "04": 4}
@@ -240,6 +245,9 @@ class ImgProjReader:
             else:
                 return frame, ts
 
+    def undistort_raw(self, imgraw, cam):
+        return self.cam_dict[cam].undistort_img(imgraw)
+
     def read_ts(self, ind, cam):
         if cam in self.kinect_cam:
             _, imgts = self.imgdir_io.get_imgfile_timestamp(cam)[ind]
@@ -258,6 +266,15 @@ class ImgProjReader:
 
     def close(self, cam):
         self.viddir_io.close(cam)
+
+    def close_all(self):
+        self.viddir_io.close_all()
+
+    def get_frame_list_for_cam(self, cam):
+        if cam in self.kinect_cam:
+            return self.imgdir_io.get_imgfile_timestamp(cam)
+        else:
+            return self.viddir_io.read_cam_ts(cam)
 
 
 class MarkerSkeletonProjReader:
@@ -288,3 +305,16 @@ class MarkerSkeletonProjReader:
 
     def get_joint_frame_num(self):
         return self.joint_curv.shape[0]
+
+
+class MDMapLoader:
+    def __init__(self, rt_md_dir, subj, takename, cam):
+        md_path = "{:}/{:}_{:}_camparams_{:}/mdp.mat".format(rt_md_dir, subj, takename, cam)
+        md = loadmat(md_path)
+        md_list = []
+        for i in range(15):
+            md_list.append(md["mdn"][0, i][:, :, np.newaxis])
+        self.md_channel = np.concatenate(md_list, axis=2)
+
+    def get_md(self):
+        return self.md_channel

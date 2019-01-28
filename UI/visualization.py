@@ -3,11 +3,14 @@
 
 __author__ = "Liyan Chen"
 
+import cv2
 import numpy as np
-import FileIO as fio
+from matplotlib import patches as ptch
 from matplotlib import pyplot as plt
 from matplotlib import widgets as wdgt
-from matplotlib import patches as ptch
+
+import FileIO as fio
+import Specifications as spec
 
 
 def show_clicks_reporj_on_img(ax, img, clicks, reproj, cam):
@@ -26,6 +29,14 @@ def show_hist_reproj_err(ax, csolver, p_world, q_proj):
 def show_proj_on_img(ax, img, proj):
     ax.imshow(img)
     ax.plot(proj[:, 0], proj[:, 1], "b+", label="Ground truth")
+
+
+def turnoff_axis(ax):
+    ax.grid(False)
+    for axi in (ax.xaxis, ax.yaxis):
+        for tic in axi.get_major_ticks():
+            tic.tick1On = tic.tick2On = False
+            tic.label1On = tic.label2On = False
 
 
 class ImgWithPtsRender:
@@ -214,3 +225,7 @@ class TimeAlignmentWindow:
 
     def load_affine_params(self, params):
         self.affine_param = params
+
+
+
+
